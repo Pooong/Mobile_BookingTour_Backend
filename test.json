@@ -1,0 +1,45 @@
+{
+    "_id": "66f44bc7c027e3f07c074664",
+    "TOUR_NAME": "Khám Phá Vẻ Đẹp Đà Nẵng",
+    "TYPE": "Sea",
+    "IS_ACTIVE": true,
+    "ID_TOUR_GUIDE_SUPERVISOR": [
+        "66ed4a45ee69c51c9f156920",
+        "66ed50a35dd09a9b3b11c970"
+    ],
+    "PRICE_PER_PERSON": "1200000",
+    "DESCRIPTION": "Tour du lịch Đà Nẵng đưa bạn đến với thành phố đáng sống nhất Việt Nam, nơi hòa quyện giữa vẻ đẹp tự nhiên và nét hiện đại năng động. Hành trình khám phá sẽ bắt đầu từ những bãi biển dài cát trắng mịn như Mỹ Khê, nơi bạn có thể thư giãn dưới ánh nắng ấm áp và làn nước trong xanh. Tiếp nối là chuyến tham quan Bà Nà Hills với Cầu Vàng nổi tiếng, tận hưởng không khí mát lạnh và kiến trúc ấn tượng của Làng Pháp cổ kính. Đến với Ngũ Hành Sơn, bạn sẽ được khám phá các hang động huyền bí và chiêm ngưỡng cảnh đẹp từ chùa Linh Ứng. Đêm về, dạo bước trên cầu Rồng rực rỡ ánh đèn và thưởng thức ẩm thực đường phố đặc sắc. Tour Đà Nẵng hứa hẹn mang đến cho bạn những trải nghiệm tuyệt vời và những kỷ niệm khó quên!",
+    "VEHICLE": "Xe khách 2 tầng",
+    "LOCATION": "Đà Nẵng",
+    "IMAGES": [
+        "https://res.cloudinary.com/dcuvwf9nx/image/upload/v1727286221/BookingTour/Tours/wpuhw1iiim0ayvwcf2sd.jpg",
+        "https://res.cloudinary.com/dcuvwf9nx/image/upload/v1727286221/BookingTour/Tours/st84rw0ozvr4qpyfle1r.jpg",
+        "https://res.cloudinary.com/dcuvwf9nx/image/upload/v1727286221/BookingTour/Tours/s93kd6ccehpbwud9y6bo.jpg"
+    ],
+    "CALENDAR_TOUR": [
+        {
+            "START_DATE": "2024-10-01T08:00:00.000Z",
+            "END_DATE": "2024-10-04T08:00:00.000Z",
+            "START_TIME": "08:00",
+            "AVAILABLE": true,
+            "AVAILABLE_SLOTS": 30,
+            "NumberOfDay": 3,
+            "NumberOfNight": 2
+        }
+    ],
+    "AVAILABLE_SLOTS": 30,
+    "CUSTOM_ATTRIBUTES": {
+        "HOTEL": "Khách sạn Mường Thanh.",
+        "RESTAURANT": "Nhà hàng Biển Đông.",
+        "VISIT_PLACE": [
+            "Vịnh Hạ Long",
+            "Bà Nà Hills",
+            "Ngũ Hành Sơn"
+        ],
+        "VEHICLE_PERSENAL": "Xe honda",
+        "NOTE": "Không có ghi chú"
+    },
+    "DEPOSIT_PERCENTAGE": 30,
+    "createdAt": "2024-09-25T17:43:37.833Z",
+    "updatedAt": "2024-09-25T17:43:37.833Z"
+}
