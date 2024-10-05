@@ -6,6 +6,7 @@ const CartSchema = new Schema(
   {
     USER_ID: {
       type: Schema.Types.ObjectId,
+      _id: false,
       required: false, // Bắt buộc có USER_ID
       ref: "User", // Tham chiếu đến collection User
     },
@@ -15,7 +16,7 @@ const CartSchema = new Schema(
         TOUR_ID: {
           type: Schema.Types.ObjectId,
           required: false, // Bắt buộc có TOUR_ID
-          ref: "Tour", // Tham chiếu đến collection Tour
+          ref: "Tours", // Tham chiếu đến collection Tour
         },
         START_DATE: {
           type: Date,
@@ -23,6 +24,14 @@ const CartSchema = new Schema(
         },
         END_DATE: {
           type: Date,
+          required: true,
+        },
+        START_TIME: {
+          type: String,
+          required: true,
+        },
+        NUMBER_OF_PEOPLE: {
+          type: String,
           required: true,
         },
       },

@@ -39,6 +39,6 @@ router.delete(
   authorRole("ADMIN", "BRANCH_MANAGER"),
   TourController.deleteTour
 );
-router.post("/search", verifyToken, TourController.searchTours);
+router.post("/search", verifyToken, TourController.searchTour);
 
 module.exports = router;

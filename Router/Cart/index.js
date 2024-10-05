@@ -1,6 +1,7 @@
 const express = require("express");
-const CartController = require("../../Controllers/Cart/CartController.js");
 const router = express.Router();
+
+const CartController = require("../../Controllers/Cart/CartController.js");
 const { verifyToken } = require("../../Middleware/verifyToken.js");
 const authorRole = require("../../Middleware/author.js");
 

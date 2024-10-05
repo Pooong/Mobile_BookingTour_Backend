@@ -1,3 +1,4 @@
+const { required } = require("joi");
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
@@ -9,12 +10,15 @@ const BookingSchema = new Schema(
       required: true,
       ref: "User",
     },
-    TOURS: [
+    LIST_TOURS: [
       {
         TOUR_ID: {
           type: Schema.Types.ObjectId,
           required: true,
-          ref: "Tour",
+        },
+        CALENDAR_TOUR_ID: {
+          type: String,
+          required: true,
         },
         START_DATE: {
           type: Date,
@@ -22,6 +26,14 @@ const BookingSchema = new Schema(
         },
         END_DATE: {
           type: Date,
+          required: true,
+        },
+        START_TIME: {
+          type: String,
+          required: true,
+        },
+        SLOT: {
+          type: Number,
           required: true,
         },
       },
@@ -33,12 +45,12 @@ const BookingSchema = new Schema(
     },
     STATUS: {
       type: String,
-      enum: ["Booked", "CheckedIn", "Canceled", "CheckedOut"],
+      enum: ["Pending", "SUCCESS", "Cancel"],
       required: true,
     },
     BOOKING_TYPE: {
       type: String,
-      enum: ["MobileApp", "Live"],
+      enum: ["Online", "Live"],
     },
     CUSTOMER_PHONE: {
       type: String,

@@ -30,4 +30,5 @@ router.post(
 // );
 
 router.get("/getUsers", verifyToken, USER_CONTROLLER.getUsers);
+// router.post("/updateInfoUser", verifyToken, USER_CONTROLLER.updateInfoUser);
 module.exports = router;

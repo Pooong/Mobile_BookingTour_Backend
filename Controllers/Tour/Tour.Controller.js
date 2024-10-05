@@ -142,31 +142,31 @@ class TourController {
   };
 
   // Tìm kiếm tour
-  searchTours = async (req, res) => {
+  async searchTour(req, res) {
+    const searchQuery = req.query; // Nhận tham số từ query
+
     try {
-      const { tabStatus, page = 1, limit = 10, search = "" } = req.query;
+      const tours = await TourService.searchTour(searchQuery);
 
-      const result = await TourService.getToursAndSearch(
-        tabStatus,
-        parseInt(page),
-        parseInt(limit),
-        search
-      );
+      if (!tours.success) {
+        return res.status(400).json({
+          success: false,
+          message: tours.message,
+        });
+      }
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
-        data: result.tours,
-        totalPages: result.totalPages,
-        totalCount: result.totalCount,
+        data: tours.data, // Trả về kết quả tìm kiếm
       });
-    } catch (err) {
-      res.status(500).json({
+    } catch (error) {
+      return res.status(500).json({
         success: false,
-        message: "Lỗi khi truy vấn người dùng.",
-        error: err.message,
+        message: "Error searching tours",
+        error: error.message,
       });
     }
-  };
+  }
 }
 
 module.exports = new TourController();

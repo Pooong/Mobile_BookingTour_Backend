@@ -1,3 +1,4 @@
+const { ref } = require("joi");
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
@@ -6,9 +7,11 @@ const PaymentSchema = new Schema(
     BOOKING_ID: {
       type: Schema.Types.ObjectId,
       required: true,
+      ref: "Booking",
     },
     USER_ID: {
       type: Schema.Types.ObjectId,
+      ref: "User",
       required: true,
     },
     PAYMENT_METHOD: {
@@ -24,12 +27,12 @@ const PaymentSchema = new Schema(
     //Tổng chưa giảm giá
     AMOUNT: {
       type: Number,
-      required: true,
+      required: false,
     },
     //số tiền phải thanh toán
     PAID: {
       type: Number,
-      required: true,
+      required: false,
     },
 
     //giảm giá

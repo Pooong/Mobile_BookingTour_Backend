@@ -17,36 +17,43 @@ class CartService {
     console.log(payload);
     // Tìm kiếm giỏ hàng của người dùng dựa trên userId
     let cart = await Cart.findOne({ USER_ID: userID });
-    // Nếu không có giỏ hàng, tạo mới giỏ hàng cho người dùng
-
     if (!cart) {
       cart = await this.createCart(userID);
     }
 
+    // Kiểm tra các trường bắt buộc
     if (!payload.TOUR_ID || !payload.START_DATE || !payload.END_DATE) {
       throw new Error("TOUR_ID không hợp lệ");
     }
 
-    // Nếu đã có giỏ hàng, kiểm tra tour có trong giỏ chưa
+    // Kiểm tra xem tour đã có trong giỏ hàng chưa
     const tourExists = cart.LIST_TOUR_REF.some(
       (tour) => tour.TOUR_ID.toString() === payload.TOUR_ID.toString()
     );
 
-    if (!tourExists) {
-      // Nếu chưa có tour trong giỏ, thêm tour vào giỏ hàng
-      cart.LIST_TOUR_REF.push(payload);
-      let TOUR = await Tour.findById(payload.TOUR_ID);
-      // console.log(TOUR);
-      let PriceTour = TOUR.PRICE_PER_PERSON; // Lấy giá tour
-
-      cart.TOTAL_PRICE = cart.TOTAL_PRICE + PriceTour; // Cộng thêm giá vào tổng
-    } else {
-      return { message: "Tour đã có trong giỏ hàng" };
+    if (tourExists) {
+      // Nếu tour đã có trong giỏ, trả về kết quả `success: false`
+      return {
+        message: "Tour đã có trong giỏ hàng",
+        success: false,
+      };
     }
+
+    // Nếu chưa có tour trong giỏ, thêm tour vào giỏ hàng
+    cart.LIST_TOUR_REF.push(payload);
+    const TOUR = await Tour.findById(payload.TOUR_ID);
+    const PriceTour = TOUR.PRICE_PER_PERSON; // Lấy giá tour
+    cart.TOTAL_PRICE = cart.TOTAL_PRICE + PriceTour; // Cộng thêm giá vào tổng
+
     // Lưu giỏ hàng vào cơ sở dữ liệu
     await cart.save();
 
-    return { message: "Đã thêm tour vào giỏ hàng thành công", cart };
+    // Trả về kết quả thành công
+    return {
+      message: "Đã thêm tour vào giỏ hàng thành công",
+      success: true,
+      cart,
+    };
   }
 
   // Xóa tour khỏi giỏ hàng
@@ -113,7 +120,12 @@ class CartService {
     const cart = await Cart.findOne({ USER_ID: userId }).populate(
       "LIST_TOUR_REF.TOUR_ID"
     );
-    if (!cart) throw new Error("Giỏ hàng không tồn tại");
+    if (!cart)
+      return [
+        {
+          message: "Bạn chưa có Tour trong giỏ hàng",
+        },
+      ];
     return cart;
   }
 }

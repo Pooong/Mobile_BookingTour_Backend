@@ -13,6 +13,7 @@ class TourService {
   // };
   getAllTours = async () => {
     try {
+      console.log("OKE ALL TOURS");
       const tours = await TourModel.find().populate({
         path: "ID_TOUR_GUIDE_SUPERVISOR", // Trường cần populate trong TourModel
         select: "FULLNAME PHONE_NUMBER", // Các thuộc tính muốn lấy từ bảng users
@@ -88,104 +89,68 @@ class TourService {
     return result.toObject();
   }
 
-  // Lấy danh sách các tour và tìm kiếm
-  async getToursAndSearch(tabStatus, page, limit, search = "") {
-    let query = {};
+  //Tìm kiếm
+  // async searchTour(searchParams) {
+  //   const searchValue = searchParams.query; // Lấy giá trị query từ searchParams
 
-    switch (tabStatus) {
-      case "1":
-        query = { STATE: true, IS_DELETED: false }; // Tour đang hoạt động
-        break;
-      case "2":
-        query = { STATE: false, IS_DELETED: false }; // Tour không hoạt động
-        break;
-      case "3":
-        query = { IS_DELETED: true }; // Tour bị xóa
-        break;
-      case "4":
-        query = {}; // Tất cả tour
-        break;
-      default:
-        throw new Error("Invalid tab status");
-    }
-
-    if (search) {
-      query.$or = [
-        { TOUR_NAME: { $regex: new RegExp(search, "i") } },
-        { DESCRIPTION: { $regex: new RegExp(search, "i") } },
-      ];
-    }
-
-    try {
-      const totalCount = await TourModel.countDocuments(query);
-      const totalPages = Math.ceil(totalCount / limit);
-      const offset = (page - 1) * limit;
-
-      const tours = await TourModel.find(query)
-        .skip(offset)
-        .limit(limit)
-        .lean(); // Sử dụng lean() để nhận về plain JavaScript objects
-
-      if (tours.length === 0) {
-        return {
-          tours: [],
-          totalPages: 0,
-          totalCount: 0,
-        };
-      }
-
-      return {
-        tours,
-        totalPages,
-        totalCount,
-      };
-    } catch (error) {
-      console.error("Error querying tours:", error);
-      throw new Error("Lỗi khi truy vấn tour");
-    }
-  }
-
-  // Tìm kiếm tour (có thể mở rộng thêm)
-  // async searchTours(page, limit, tourName = "", location = "") {
-  //   let query = { IS_DELETED: false }; // Chỉ lấy tour chưa bị xóa
-
-  //   const andConditions = [];
-
-  //   // Điều kiện tìm kiếm theo tên tour
-  //   if (tourName) {
-  //     andConditions.push({ TOUR_NAME: { $regex: new RegExp(tourName, "i") } });
+  //   // Kiểm tra nếu không có tham số nào được truyền
+  //   if (!searchValue) {
+  //     console.log("Không có tham số tìm kiếm, trả về danh sách rỗng.");
+  //     return { success: false, message: "Không có tham số tìm kiếm." }; // Trả về object thông báo lỗi
   //   }
 
-  //   // Điều kiện tìm kiếm theo vị trí
-  //   if (location) {
-  //     andConditions.push({ LOCATION: { $regex: new RegExp(location, "i") } });
-  //   }
-
-  //   // Kết hợp tất cả các điều kiện trong một truy vấn
-  //   if (andConditions.length > 0) {
-  //     query.$and = andConditions;
-  //   }
+  //   const query = {
+  //     $or: [
+  //       { TOUR_NAME: { $regex: new RegExp(searchValue, "i") } }, // Tìm kiếm không phân biệt hoa thường theo TOUR_NAME
+  //       { LOCATION: { $regex: new RegExp(searchValue, "i") } }, // Tìm kiếm không phân biệt hoa thường theo LOCATION
+  //     ],
+  //   };
 
   //   try {
-  //     const totalCount = await TourModel.countDocuments(query);
-  //     const totalPages = Math.ceil(totalCount / limit);
-  //     const offset = (page - 1) * limit;
-
-  //     const tours = await TourModel.find(query)
-  //       .skip(offset)
-  //       .limit(limit)
-  //       .lean(); // Sử dụng lean() để nhận về plain JavaScript objects
-
-  //     return {
-  //       tours,
-  //       totalPages,
-  //       totalCount,
-  //     };
+  //     const tours = await TourModel.find(query);
+  //     if (tours.length === 0) {
+  //       console.log("Không tìm thấy tour phù hợp.");
+  //       return { success: false, message: "Không tìm thấy tour phù hợp." }; // Trả về object thông báo lỗi
+  //     }
+  //     console.log("TOURS", tours);
+  //     return { success: true, data: tours }; // Trả về danh sách các tour tìm thấy
   //   } catch (error) {
-  //     console.error("Error searching tours:", error);
-  //     throw new Error("Lỗi khi tìm kiếm tour");
+  //     throw new Error("Error searching for tours: " + error.message);
   //   }
   // }
-}
+  async searchTour(searchParams) {
+    const searchValue = searchParams.query; // Lấy giá trị query từ searchParams
 
+    // Kiểm tra nếu không có tham số nào được truyền
+    if (!searchValue) {
+      console.log("Không có tham số tìm kiếm, trả về danh sách rỗng.");
+      return { success: false, message: "Không có tham số tìm kiếm." }; // Trả về object thông báo lỗi
+    }
+
+    const query = {
+      $or: [
+        { TOUR_NAME: { $regex: new RegExp(searchValue, "i") } }, // Tìm kiếm không phân biệt hoa thường theo TOUR_NAME
+        { LOCATION: { $regex: new RegExp(searchValue, "i") } }, // Tìm kiếm không phân biệt hoa thường theo LOCATION
+      ],
+    };
+
+    try {
+      const tours = await TourModel.find(query).populate({
+        path: "ID_TOUR_GUIDE_SUPERVISOR", // Populate trường ID_TOUR_GUIDE_SUPERVISOR
+        select: "FULLNAME PHONE_NUMBER", // Chỉ lấy các trường FULLNAME và PHONE_NUMBER
+        model: "User", // Model được populate là 'User'
+      });
+
+      if (tours.length === 0) {
+        console.log("Không tìm thấy tour phù hợp.");
+        return { success: false, message: "Không tìm thấy tour phù hợp." }; // Trả về object thông báo lỗi
+      }
+
+      console.log("TOURS", tours);
+      return { success: true, data: tours }; // Trả về danh sách các tour tìm thấy
+    } catch (error) {
+      throw new Error("Error searching for tours: " + error.message);
+    }
+  }
+}
 module.exports = new TourService();

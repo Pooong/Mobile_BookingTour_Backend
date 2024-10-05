@@ -1,8 +1,10 @@
 const CartService = require("../../Service/Cart/CartService");
 const CartValidator = require("../../Model/Cart/Validate/validateCart");
+const Cart = require("../../Model/Cart/Cart.Model"); // Mô hình Cart từ MongoDB
 
 class CartController {
   // Thêm tour vào giỏ hàng
+
   async addTourToCart(req, res) {
     const userId = req.user_id; // Lấy userId từ token hoặc session
     const payload = req.body; // Lấy thông tin tour từ body
@@ -16,12 +18,21 @@ class CartController {
         !payload.END_DATE
       ) {
         return res.status(400).json({
+          success: false,
           message: "userId, TOUR_ID, startDate, endDate và price là bắt buộc.",
         });
       }
 
       // Gọi service để thêm tour vào giỏ hàng
       const result = await CartService.addTourToCart(payload, userId);
+
+      // Kiểm tra nếu tour đã có trong giỏ hàng, trả về thông báo `success: false`
+      if (result.success === false) {
+        return res.status(200).json({
+          success: false,
+          message: result.message,
+        });
+      }
 
       // Trả về kết quả thành công
       return res.status(200).json({
@@ -37,6 +48,7 @@ class CartController {
       });
     }
   }
+
   // Xóa tour khỏi giỏ hàng
   async removeTourFromCart(req, res) {
     try {
@@ -81,6 +93,7 @@ class CartController {
       res.status(200).json(result);
     } catch (error) {
       console.log("@");
+      console.log(error);
       res.status(500).json({ message: error.message });
     }
   }

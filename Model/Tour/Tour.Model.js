@@ -39,7 +39,6 @@ const CalendarTourSchema = new Schema({
     required: false,
     default: 2,
   },
-  _id: false, // Disable the creation of an _id field for this subdocument
 });
 
 const TourProgramSchema = new Schema({
