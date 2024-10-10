@@ -121,8 +121,8 @@ class PaymentController {
 
           if (updateBooking) {
             return res.status(200).json({
-              statusCode: 200,
-              msg: "Đơn hàng đã được thanh toán thành công",
+              statusCode: updateBooking.statusCode,
+              msg: "Đơn hàng đã được xác nhận",
               data: updateBooking,
             });
           } else {

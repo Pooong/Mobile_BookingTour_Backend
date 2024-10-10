@@ -18,6 +18,10 @@ const CartSchema = new Schema(
           required: false, // Bắt buộc có TOUR_ID
           ref: "Tours", // Tham chiếu đến collection Tour
         },
+        CALENDAR_TOUR_ID: {
+          type: Schema.Types.ObjectId,
+          required: false, // Bắt buộc có CALENDAR_TOUR_ID
+        },
         START_DATE: {
           type: Date,
           required: true,
@@ -32,6 +36,10 @@ const CartSchema = new Schema(
         },
         NUMBER_OF_PEOPLE: {
           type: String,
+          required: true,
+        },
+        TOTAL_PRICE_TOUR: {
+          type: Number,
           required: true,
         },
       },

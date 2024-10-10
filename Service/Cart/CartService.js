@@ -22,8 +22,13 @@ class CartService {
     }
 
     // Kiểm tra các trường bắt buộc
-    if (!payload.TOUR_ID || !payload.START_DATE || !payload.END_DATE) {
-      throw new Error("TOUR_ID không hợp lệ");
+    if (
+      !payload.TOUR_ID ||
+      !payload.START_DATE ||
+      !payload.END_DATE ||
+      !payload.CALENDAR_TOUR_ID
+    ) {
+      throw new Error("THIẾU DỮ LIỆU BẮT BUỘC");
     }
 
     // Kiểm tra xem tour đã có trong giỏ hàng chưa
