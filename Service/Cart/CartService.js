@@ -87,7 +87,7 @@ class CartService {
       cart.LIST_TOUR_REF.splice(tourIndex, 1);
 
       // Cập nhật tổng giá
-      cart.TOTAL_PRICE -= tourToRemove.price; // Đảm bảo giá tour được lưu trong tourToRemove
+      // cart.TOTAL_PRICE -= tourToRemove.price; // Đảm bảo giá tour được lưu trong tourToRemove
 
       // Lưu giỏ hàng vào cơ sở dữ liệu
       await cart.save();
@@ -100,24 +100,42 @@ class CartService {
   }
 
   // Sửa thông tin tour trong giỏ hàng
+  // Controller method to update a tour in the cart (using cartId and tourId from body)
   async updateTourInCart(cartId, tourId, tourData) {
-    const { START_DATE, END_DATE } = tourData;
-    const cart = await Cart.findById(cartId);
-    if (!cart) throw new Error("Giỏ hàng không tồn tại");
+    const {
+      CALENDAR_TOUR_ID,
+      START_DATE,
+      END_DATE,
+      START_TIME,
+      NUMBER_OF_PEOPLE,
+    } = tourData;
 
-    // Tìm tour cần sửa
+    // Tìm giỏ hàng theo ID
+    const cart = await Cart.findById(cartId);
+    if (!cart) {
+      throw new Error("Giỏ hàng không tồn tại");
+    }
+
+    // Tìm tour cần cập nhật trong giỏ hàng
     const tour = cart.LIST_TOUR_REF.find(
       (tour) => tour.TOUR_ID.toString() === tourId
     );
 
-    if (!tour) throw new Error("Tour không tồn tại trong giỏ hàng");
+    if (!tour) {
+      throw new Error("Tour không tồn tại trong giỏ hàng");
+    }
 
-    // Cập nhật thông tin tour
+    // Cập nhật thông tin tour với các giá trị mới
+    tour.CALENDAR_TOUR_ID = CALENDAR_TOUR_ID || tour.CALENDAR_TOUR_ID;
     tour.START_DATE = START_DATE || tour.START_DATE;
     tour.END_DATE = END_DATE || tour.END_DATE;
+    tour.START_TIME = START_TIME || tour.START_TIME;
+    tour.NUMBER_OF_PEOPLE = NUMBER_OF_PEOPLE || tour.NUMBER_OF_PEOPLE;
 
+    // Lưu lại giỏ hàng sau khi cập nhật
     await cart.save();
-    return cart;
+
+    return cart; // Trả về giỏ hàng đã được cập nhật
   }
 
   // Lấy tất cả các tour trong giỏ hàng

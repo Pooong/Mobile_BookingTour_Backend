@@ -21,7 +21,7 @@ class MailQueue {
     });
   }
 
-  enqueue(item) {
+  async enqueue(item) {
     this.queue.push(item);
     this.pendingSend();
   }
@@ -41,11 +41,31 @@ class MailQueue {
   async run_send() {
     const notification = this.peek();
     if (notification) {
-      await this.sendMail(
-        notification.email,
-        notification.otp,
-        notification.otpType
-      );
+      if (notification.otpType === "BookingConfirmation") {
+        await this.sendBookingConfirmation(
+          notification.email,
+          notification.content
+        );
+      } else {
+        await this.sendMail(
+          notification.email,
+          notification.otp,
+          notification.otpType
+        );
+      }
+    }
+  }
+  async sendBookingConfirmation(email, content) {
+    try {
+      await this.transporter.sendMail({
+        from: `"Dịch vụ du lịch GoExplore" <${process.env.EMAIL_USERNAME}>`,
+        to: email,
+        subject: "Xác nhận đặt xác nhận đặt tour",
+        html: content,
+      });
+      console.log("Email xác nhận đặt phòng đã được gửi thành công!");
+    } catch (error) {
+      console.error("Lỗi khi gửi email xác nhận đặt phòng:", error);
     }
   }
 

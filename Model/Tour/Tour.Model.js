@@ -81,7 +81,7 @@ const TourSchema = new Schema(
     TYPE: {
       type: String,
       //"Cruise = Du thuyền, Mountain = Núi, Sea = Biển, City = Thành phố"
-      enum: ["Mountain", "Sea", "Waterfall", "Cruise", "Cave"],
+      enum: ["Núi", "Biển", "Thác nước", "Du Thuyền", "Hang động"],
       required: true,
     },
     IS_ACTIVE: {
@@ -92,7 +92,6 @@ const TourSchema = new Schema(
     ID_TOUR_GUIDE_SUPERVISOR: {
       type: [Schema.Types.ObjectId],
       ref: "User",
-      // default: "66ed4a45ee69c51c9f156920",
     },
 
     PRICE_PER_PERSON: {
@@ -131,6 +130,10 @@ const TourSchema = new Schema(
     DEPOSIT_PERCENTAGE: {
       type: Number,
       required: true,
+    },
+    START_ADDRESS: {
+      type: String,
+      default: "330 Nguyễn Văn Linh, Ninh Kiều, Cần Thơ",
     },
   },
   {

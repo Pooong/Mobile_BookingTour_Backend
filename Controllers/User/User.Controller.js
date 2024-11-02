@@ -218,6 +218,7 @@ class USER_CONTROLLER {
     res.clearCookie("refreshToken", COOKIE_OPTIONS); // Xóa cookie chứa refresh token
     res.status(200).json({ message: "Logged out successfully" });
   };
+
   getUsers = async (req, res) => {
     try {
       const { tabStatus, page = 1, limit = 10, search = "" } = req.query;
@@ -243,7 +244,21 @@ class USER_CONTROLLER {
       });
     }
   };
+  getUserById = async (req, res) => {
+    try {
+      const userId = req.params.id;
 
+      const user = await USER_SERVICE.getUserInfo(userId);
+
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      res.status(200).json(user);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  };
   blockUser = async (req, res) => {
     const payload = req.body;
     const { userId } = payload;
@@ -269,6 +284,82 @@ class USER_CONTROLLER {
       res.json(updatedUser);
     } catch (error) {
       res.status(500).json({ error: error.message });
+    }
+  };
+
+  async getUserByRole(req, res) {
+    const { role } = req.body; // Nhận vai trò từ body
+    try {
+      if (typeof role !== "boolean") {
+        return res.status(400).json({
+          success: false,
+          message: "Role must be a boolean value.",
+        });
+      }
+      const users = await USER_SERVICE.getUserByRole(role);
+      return res.status(200).json({
+        success: true,
+        data: users,
+      });
+    } catch (error) {
+      console.error("Error fetching users by role:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch users.",
+        error: error.message,
+      });
+    }
+  }
+
+  //Controller
+  editUser = async (req, res) => {
+    const userId = req.user_id;
+    const data = req.body;
+    const { newEMAIL, Password } = data;
+    const otpType = "edit_account";
+    try {
+      const user = await USER_SERVICE.getUserInfo(userId);
+      const checkUserExists = await USER_SERVICE.checkUserExists(
+        data.EMAIL,
+        data.PHONE_NUMBER
+      );
+      if (checkUserExists) {
+        return res
+          .status(400)
+          .json({ message: "Email hoặc số điện thoại đã tồn tại." });
+      }
+      // Kiểm tra mật khẩu hiện tại
+      const isPasswordValid = await USER_SERVICE.checkPassword(
+        data.PASSWORD,
+        user.PASSWORD
+      );
+      if (!isPasswordValid) {
+        return res.status(401).json({ message: "Mật khẩu không chính xác." });
+      }
+      if (data.EMAIL) {
+        const updateData = await USER_SERVICE.editUser(userId, data);
+        await USER_MODEL.findByIdAndUpdate(userId, updateData, { new: true });
+        const sendMail = await MailQueue.sendVerifyEmail(data.EMAIL, otpType);
+        if (!sendMail) {
+          throw new Error("Gửi email xác minh thất bại");
+        }
+        return res
+          .status(200)
+          .json({ message: "Vui lòng kiểm tra email để xác thực." });
+      } else {
+        const updateData = await USER_SERVICE.editUser(userId, data);
+        await USER_MODEL.findByIdAndUpdate(userId, updateData, { new: true });
+        return res.status(200).json({
+          success: true,
+          message: "Thông tin người dùng đã được cập nhật thành công.",
+        });
+      }
+    } catch (error) {
+      console.error("Error updating user:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Đã xảy ra lỗi khi cập nhật thông tin người dùng.",
+      });
     }
   };
 }

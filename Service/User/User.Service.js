@@ -224,6 +224,43 @@ class USER_SERVICE {
 
     return foundUser;
   }
+
+  async editUser(userId, data) {
+    const user = await USER_MODEL.findById(userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    const updateData = {};
+    if (data.EMAIL) {
+      updateData.EMAIL = data.EMAIL;
+      updateData.IS_ACTIVATED = false;
+    } else {
+      if (data.FULLNAME) updateData.FULLNAME = data.FULLNAME;
+      if (data.PHONE_NUMBER) updateData.PHONE_NUMBER = data.PHONE_NUMBER;
+      if (data.ADDRESS) updateData.ADDRESS = data.ADDRESS;
+    }
+    return updateData;
+  }
+
+  async getUserByRole(isActive) {
+    try {
+      // Tạo một điều kiện để kiểm tra các vai trò
+      const query = {
+        $or: [
+          { "ROLE.ADMIN": isActive },
+          { "ROLE.BRANCH_MANAGER": isActive },
+          { "ROLE.STAFF": isActive },
+        ],
+      };
+
+      // Tìm người dùng dựa trên điều kiện đã xây dựng
+      const users = await USER_MODEL.find(query).exec();
+
+      return users;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
 }
 
 module.exports = new USER_SERVICE();

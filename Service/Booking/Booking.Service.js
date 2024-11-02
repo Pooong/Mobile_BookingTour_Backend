@@ -1,7 +1,31 @@
 const TourModel = require("../../Model/Tour/Tour.Model");
 const BookingModel = require("../../Model/Booking/Booking.Model");
 const TourService = require("../../Service/Tour/Tour.Service");
+const USER_MODEL = require("../../Model/User/User.Model");
+const MAIL_QUEUE = require("../../Utils/sendMail");
 class BookingService {
+  async getTotalBooking() {
+    try {
+      const totalBooking = await BookingModel.countDocuments();
+      return totalBooking;
+    } catch (error) {
+      throw new Error("Error fetching total bookings: " + error.message);
+    }
+  }
+  async getBookingByUserId(userId) {
+    try {
+      const bookings = await BookingModel.find({ USER_ID: userId }).populate({
+        path: "LIST_TOURS.TOUR_ID",
+        select: "TOUR_NAME IMAGES LOCATION",
+      });
+      // console.log("bookings", bookings);
+      return bookings;
+    } catch (error) {
+      throw new Error(
+        `Error retrieving bookings for user ${userId}: ${error.message}`
+      );
+    }
+  }
   async bookTourNow(userID, payload) {
     try {
       const booking = new BookingModel({
@@ -104,6 +128,32 @@ class BookingService {
       throw new Error(`Lỗi khi đặt tour: ${error.message}`);
     }
   }
+  async getAllBookings() {
+    try {
+      // Lấy bookings và populate thông tin user và tour
+      let bookings = await BookingModel.find()
+        .populate("USER_ID", "FULLNAME EMAIL")
+        .populate({
+          path: "LIST_TOURS.TOUR_ID",
+          select: "TOUR_NAME IMAGES  PRICE_PER_PERSON",
+        });
+
+      // Lấy hình ảnh đầu tiên trong IMAGES và gán lại vào danh sách tour
+      bookings = bookings.map((booking) => {
+        booking.LIST_TOURS = booking.LIST_TOURS.map((tour) => {
+          if (tour.TOUR_ID && tour.TOUR_ID.IMAGES.length > 0) {
+            tour.TOUR_ID.IMAGES = [tour.TOUR_ID.IMAGES[0]];
+          }
+          return tour;
+        });
+        return booking;
+      });
+
+      return bookings;
+    } catch (error) {
+      throw new Error("Error fetching bookings: " + error.message);
+    }
+  }
 
   //UPDATE BOOKING STATUS
   async updateBookingStatus({ bookingId, status }) {
@@ -112,6 +162,9 @@ class BookingService {
       const booking = await BookingModel.findById(bookingId);
       if (!booking) throw new Error("Không tìm thấy đơn đặt tour");
 
+      const user = await USER_MODEL.findById(booking.USER_ID);
+      if (!user || !user.EMAIL)
+        throw new Error("Không tìm thấy người dùng hoặc email không tồn tại");
       // Cập nhật trạng thái của đơn đặt phòng
       booking.STATUS = status;
       await booking.save();
@@ -125,7 +178,49 @@ class BookingService {
           tour.SLOT
         );
       }
+      if (status === "SUCCESS") {
+        const emailContent = `
+        <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+          <h2 style="text-align: center; color: #4CAF50;">Xin chào ${user.FULLNAME},</h2>
+          <p style="font-size: 16px; line-height: 1.5;">
+            Chúc mừng bạn đã đặt tour thành công với mã đơn  
+            <strong style="color: #FF5722;">${bookingId}</strong>. Chi tiết đơn  như sau:
+          </p>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 16px;">
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">Tên khách hàng:</td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${booking.CUSTOMER_NAME}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">Thời gian đặt tour:</td>
+              <td style="padding: 8px; border: 1px solid #ddd;">
+                ${booking.LIST_TOURS[0].START_DATE} - ${booking.LIST_TOURS[0].END_DATE}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9;">Tổng tiền:</td>
+              <td style="padding: 8px; border: 1px solid #ddd;">
+                <strong style="color: #FF5722;">${booking.TOTAL_PRICE} VND</strong>
+              </td>
+            </tr>
+          </table>
+          <p style="margin-top: 20px; font-size: 16px; line-height: 1.5;">
+            Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi! Chúc bạn có một kỳ nghỉ vui vẻ.
+          </p>
+          <div style="text-align: center; margin-top: 30px;">
+            <a href="https://example.com" style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; font-size: 16px;">Xem chi tiết đơn </a>
+          </div>
+        </div>
+      `;
 
+        // Đưa email vào hàng đợi
+        await MAIL_QUEUE.enqueue({
+          email: user.EMAIL,
+          otp: "", // Không cần OTP cho xác nhận booking
+          otpType: "BookingConfirmation",
+          content: emailContent,
+        });
+      }
       return {
         statusCode: 200,
         msg: `Đặt Tour Thành Công !!!`,

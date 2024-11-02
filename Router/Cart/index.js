@@ -7,13 +7,13 @@ const authorRole = require("../../Middleware/author.js");
 
 router.post("/addTourToCart", verifyToken, CartController.addTourToCart);
 // Thêm tour vào giỏ hàng
-router.delete(
+router.post(
   "/removeTourFromCart",
   verifyToken,
   CartController.removeTourFromCart
 ); // Xóa tour khỏi giỏ hàng
-router.put(
-  "/updateTourInCart/:cartId/:tourId",
+router.post(
+  "/updateTourInCart/:cartId",
   verifyToken,
   CartController.updateTourInCart
 ); // Sửa tour trong giỏ hàng

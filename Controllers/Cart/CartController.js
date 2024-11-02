@@ -68,18 +68,45 @@ class CartController {
   }
 
   // Sửa tour trong giỏ hàng
+  // Controller method to update a tour in the cart (using cartId and tourId from body)
   async updateTourInCart(req, res) {
     try {
-      const { cartId, tourId } = req.params;
-      const tourData = req.body;
-      const result = await CartService.updateTourInCart(
+      const {
         cartId,
         tourId,
-        tourData
-      );
-      res.status(200).json(result);
+        CALENDAR_TOUR_ID,
+        START_DATE,
+        END_DATE,
+        START_TIME,
+        NUMBER_OF_PEOPLE,
+      } = req.body; // Lấy tất cả thông tin từ body
+
+      if (!cartId || !tourId) {
+        return res.status(400).json({
+          message: "cartId và tourId là bắt buộc",
+        });
+      }
+
+      // Gọi service để thực hiện cập nhật tour trong giỏ hàng
+      const updatedCart = await CartService.updateTourInCart(cartId, tourId, {
+        CALENDAR_TOUR_ID,
+        START_DATE,
+        END_DATE,
+        START_TIME,
+        NUMBER_OF_PEOPLE,
+      });
+
+      // Trả về phản hồi thành công với giỏ hàng đã được cập nhật
+      res.status(200).json({
+        message: "Cập nhật tour trong giỏ hàng thành công",
+        cart: updatedCart,
+      });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      // Xử lý lỗi và trả về phản hồi lỗi
+      res.status(500).json({
+        message: "Có lỗi xảy ra khi cập nhật tour trong giỏ hàng",
+        error: error.message,
+      });
     }
   }
 

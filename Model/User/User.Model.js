@@ -7,9 +7,11 @@ const UserSchema = new Schema(
       type: String,
       required: false,
     },
-    AVATAR: {
+    PHOTO_URL: {
       type: String,
       required: false,
+      default:
+        "https://res.cloudinary.com/dcuvwf9nx/image/upload/v1728554401/BookingTour/Tours/user-icon-1024x1024-dtzturco_ahsmp0.png",
     },
     TOUR_ID: {
       type: Schema.Types.ObjectId,

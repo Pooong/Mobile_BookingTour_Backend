@@ -3,18 +3,18 @@ const router = express.Router();
 const TourController = require("../../Controllers/Tour/Tour.Controller");
 const { verifyToken } = require("../../Middleware/verifyToken");
 const authorRole = require("../../Middleware/author");
-
+const upload = require("../../Config/multerConfig");
 // Lấy tất cả các tour
 router.get("/", verifyToken, TourController.getAllTours);
 
 // Lấy tour theo ID
-router.get("/:id", verifyToken, TourController.getTourById);
 
 // Tạo mới một tour
 router.post(
   "/",
   verifyToken,
   authorRole("ADMIN", "BRANCH_MANAGER"),
+  upload,
   TourController.createTour
 );
 
@@ -25,12 +25,6 @@ router.post(
   TourController.createCalendarTour
 );
 // Cập nhật tour theo ID
-router.put(
-  "/:id",
-  verifyToken,
-  authorRole("ADMIN", "BRANCH_MANAGER"),
-  TourController.updateTour
-);
 
 // Xóa tour theo ID
 router.delete(
@@ -39,6 +33,21 @@ router.delete(
   authorRole("ADMIN", "BRANCH_MANAGER"),
   TourController.deleteTour
 );
-router.post("/search", verifyToken, TourController.searchTour);
+router.put(
+  "/edit/:id",
+  verifyToken,
+  authorRole("ADMIN", "BRANCH_MANAGER"),
+  upload,
+  TourController.updateTour
+);
+router.get("/search", verifyToken, TourController.searchTour);
+router.get("/top-revenue-tours", TourController.getTopRevenueTours);
+router.get("/revenue/total", TourController.getTotalRevenue);
+router.get("/revenue/per-tour", TourController.getRevenuePerTour);
+router.get("/revenue/by-type", TourController.getRevenueByType);
+router.get("/revenue/monthly", TourController.getMonthlyRevenue);
+router.get("/latestTours", TourController.getLatestTours);
+
+router.get("/:id", verifyToken, TourController.getTourById);
 
 module.exports = router;
