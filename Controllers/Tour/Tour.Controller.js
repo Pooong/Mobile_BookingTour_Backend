@@ -1,6 +1,7 @@
 const TourService = require("../../Service/Tour/Tour.Service");
 const ValidateTour = require("../../Model/Tour/validate/validateTour");
 const CLOUDINARY = require("../../Config/cloudinaryConfig");
+const Booking = require("../../Model/Booking/Booking.Model");
 class TourController {
   getAllTours = async (req, res) => {
     try {
@@ -208,23 +209,46 @@ class TourController {
       });
     }
   }
+  async getDailyRevenue(req, res) {
+    try {
+      const { day, month, year } = req.params;
+      const dailyRevenue = await TourService.calculateDailyRevenue(
+        day,
+        month,
+        year
+      );
+
+      res.status(200).json({
+        success: true,
+        data: dailyRevenue,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Error calculating daily revenue",
+        error: error.message,
+      });
+    }
+  }
 
   // Lấy tổng doanh thu từ tất cả các tour
-  getTotalRevenue = async (req, res) => {
+  async getTotalRevenue(req, res) {
     try {
-      const totalRevenue = await TourService.calculateTotalRevenue();
+      const { year } = req.query; // Get year from query parameters if provided
+      const totalRevenue = await TourService.calculateTotalRevenue(year);
+
       res.status(200).json({
         success: true,
         totalRevenue,
       });
     } catch (error) {
-      console.error("Error calculating total revenue:", error);
-      res
-        .status(500)
-        .json({ success: false, message: "Error calculating total revenue" });
+      res.status(500).json({
+        success: false,
+        message: "Error calculating total revenue",
+        error: error.message,
+      });
     }
-  };
-
+  }
   // Lấy doanh thu theo từng tour
   getRevenuePerTour = async (req, res) => {
     try {
@@ -243,37 +267,50 @@ class TourController {
   };
 
   // Lấy doanh thu theo loại tour
-  getRevenueByType = async (req, res) => {
+  getRevenueByTourType = async (req, res) => {
+    const { type } = req.query;
+
+    if (!type) {
+      return res.status(400).json({ message: "Tour type is required." });
+    }
+
     try {
-      const revenueByType = await TourService.calculateRevenueByType();
-      res.status(200).json({
+      const revenue = await TourService.calculateRevenueByTourType(type);
+      return res.status(200).json({
         success: true,
-        data: revenueByType,
+        type,
+        revenue,
       });
     } catch (error) {
-      console.error("Error calculating revenue by type:", error);
-      res
-        .status(500)
-        .json({ success: false, message: "Error calculating revenue by type" });
+      console.error("Error in getRevenueByTourType controller:", error);
+      return res.status(500).json({ message: "Internal server error." });
     }
   };
 
-  // Lấy doanh thu theo tháng
   getMonthlyRevenue = async (req, res) => {
+    const { month, year } = req.query;
+
+    if (!month || !year) {
+      return res.status(400).json({ message: "Month and year are required." });
+    }
+
     try {
-      const monthlyRevenue = await TourService.calculateMonthlyRevenue();
-      res.status(200).json({
+      const revenue = await TourService.calculateMonthlyRevenue(
+        parseInt(month),
+        parseInt(year)
+      );
+
+      return res.status(200).json({
         success: true,
-        data: monthlyRevenue,
+        month,
+        year,
+        revenue,
       });
     } catch (error) {
-      console.error("Error calculating monthly revenue:", error);
-      res
-        .status(500)
-        .json({ success: false, message: "Error calculating monthly revenue" });
+      console.error("Error in getMonthlyRevenue controller:", error);
+      return res.status(500).json({ message: "Internal server error." });
     }
   };
-
   async getTopRevenueTours(req, res) {
     try {
       const topTours = await TourService.getTopRevenueTours();

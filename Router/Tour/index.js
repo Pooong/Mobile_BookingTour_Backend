@@ -44,9 +44,10 @@ router.get("/search", verifyToken, TourController.searchTour);
 router.get("/top-revenue-tours", TourController.getTopRevenueTours);
 router.get("/revenue/total", TourController.getTotalRevenue);
 router.get("/revenue/per-tour", TourController.getRevenuePerTour);
-router.get("/revenue/by-type", TourController.getRevenueByType);
+router.get("/revenue/by-type", TourController.getRevenueByTourType);
 router.get("/revenue/monthly", TourController.getMonthlyRevenue);
 router.get("/latestTours", TourController.getLatestTours);
+router.get("/revenue/dailyrevenue", TourController.getDailyRevenue);
 
 router.get("/:id", verifyToken, TourController.getTourById);
 

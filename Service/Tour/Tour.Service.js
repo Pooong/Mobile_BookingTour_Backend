@@ -186,10 +186,191 @@ class TourService {
   }
 
   // Tổng doanh thu từ tất cả các tour
-  async calculateTotalRevenue() {
+  async calculateTotalRevenue(year) {
+    try {
+      const filter = year
+        ? {
+            CREATE_AT: {
+              $gte: new Date(`${year}-01-01T00:00:00.000Z`),
+              $lte: new Date(`${year}-12-31T23:59:59.999Z`),
+            },
+          }
+        : {};
+
+      const result = await BookingModel.aggregate([
+        { $match: filter },
+        { $group: { _id: null, totalRevenue: { $sum: "$TOTAL_PRICE" } } },
+      ]);
+
+      return result[0]?.totalRevenue || 0;
+    } catch (error) {
+      console.error("Error calculating total revenue:", error);
+      throw error;
+    }
+  }
+
+  // rev
+  async calculateDailyRevenue(day, month, year) {
+    try {
+      // Tạo filter dựa trên ngày tháng năm nếu có
+      let filter = {};
+      if (year && month && day) {
+        // Thống kê cho một ngày cụ thể
+        filter.CREATE_AT = {
+          $gte: new Date(`${year}-${month}-${day}T00:00:00.000Z`),
+          $lt: new Date(`${year}-${month}-${day}T23:59:59.999Z`),
+        };
+      } else if (year && month) {
+        // Thống kê cho tất cả các ngày trong tháng
+        filter.CREATE_AT = {
+          $gte: new Date(`${year}-${month}-01T00:00:00.000Z`),
+          $lt: new Date(`${year}-${month}-31T23:59:59.999Z`),
+        };
+      } else if (year) {
+        // Thống kê cho tất cả các ngày trong năm
+        filter.CREATE_AT = {
+          $gte: new Date(`${year}-01-01T00:00:00.000Z`),
+          $lt: new Date(`${year}-12-31T23:59:59.999Z`),
+        };
+      }
+
+      // Aggregation để tính tổng doanh thu theo ngày
+      const result = await BookingModel.aggregate([
+        { $match: filter },
+        {
+          $group: {
+            _id: {
+              day: { $dayOfMonth: "$CREATE_AT" },
+              month: { $month: "$CREATE_AT" },
+              year: { $year: "$CREATE_AT" },
+            },
+            totalRevenue: { $sum: "$TOTAL_PRICE" },
+          },
+        },
+        { $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 } },
+      ]);
+
+      return result;
+    } catch (error) {
+      console.error("Error calculating daily revenue:", error);
+      throw error;
+    }
+  }
+  // Doanh thu theo từng tour
+  async calculateRevenuePerTour() {
     try {
       const result = await BookingModel.aggregate([
-        { $unwind: "$LIST_TOURS" }, // Tách mảng LIST_TOURS để tính riêng từng tour
+        { $unwind: "$LIST_TOURS" }, // Unwind LIST_TOURS to access each tour individually
+        {
+          $lookup: {
+            from: "tours", // Join with the 'tours' collection
+            localField: "LIST_TOURS.TOUR_ID",
+            foreignField: "_id",
+            as: "tourDetails",
+          },
+        },
+        { $unwind: "$tourDetails" }, // Unwind tourDetails array to access tour data
+        {
+          $match: {
+            STATUS: "SUCCESS", // Only consider successful bookings
+          },
+        },
+        {
+          $group: {
+            _id: "$tourDetails._id", // Group by tour ID
+            tourName: { $first: "$tourDetails.TOUR_NAME" },
+            tourImage: { $first: "$tourDetails.IMAGES" }, // Assume IMAGES is an array; you can get the first image if you need only one
+            totalRevenue: {
+              $sum: {
+                $multiply: [
+                  { $toDouble: "$tourDetails.PRICE_PER_PERSON" },
+                  "$LIST_TOURS.SLOT",
+                ],
+              },
+            },
+          },
+        },
+        { $sort: { totalRevenue: -1 } }, // Sort by revenue in descending order
+      ]);
+
+      return result;
+    } catch (error) {
+      console.error("Error calculating revenue per tour:", error);
+      throw new Error("Error calculating revenue per tour");
+    }
+  }
+  getRevenuePerTour = async (req, res) => {
+    try {
+      const revenueData = await TourService.calculateRevenuePerTour();
+      return res.status(200).json({
+        success: true,
+        data: revenueData,
+      });
+    } catch (error) {
+      console.error("Error in getRevenuePerTour controller:", error);
+      return res.status(500).json({ message: "Internal server error." });
+    }
+  };
+
+  // Doanh thu theo loại tour
+  async calculateRevenueByTourType(tourType) {
+    try {
+      const result = await BookingModel.aggregate([
+        { $unwind: "$LIST_TOURS" }, // Unwind LIST_TOURS array to access each tour individually
+        {
+          $lookup: {
+            from: "tours",
+            localField: "LIST_TOURS.TOUR_ID",
+            foreignField: "_id",
+            as: "tourDetails",
+          },
+        },
+        { $unwind: "$tourDetails" }, // Unwind tourDetails array
+        {
+          $match: {
+            STATUS: "SUCCESS", // Only successful bookings
+            "tourDetails.TYPE": tourType, // Filter by the specified tour type
+          },
+        },
+        {
+          $group: {
+            _id: "$tourDetails.TYPE",
+            totalRevenue: {
+              $sum: {
+                $multiply: [
+                  { $toDouble: "$tourDetails.PRICE_PER_PERSON" },
+                  "$LIST_TOURS.SLOT",
+                ],
+              },
+            },
+          },
+        },
+      ]);
+
+      // Return the total revenue for the specified tour type or 0 if no data
+      return result.length > 0 ? result[0].totalRevenue : 0;
+    } catch (error) {
+      console.error("Error calculating revenue by tour type:", error);
+      throw new Error("Error calculating revenue by tour type");
+    }
+  }
+  // Doanh thu theo tháng
+  async calculateMonthlyRevenue(month, year) {
+    try {
+      const startDate = new Date(year, month - 1, 1);
+      const endDate = new Date(year, month, 1); // This is the first day of the next month
+
+      const result = await BookingModel.aggregate([
+        {
+          $match: {
+            STATUS: "SUCCESS",
+            CREATE_AT: {
+              $gte: startDate,
+              $lt: endDate,
+            },
+          },
+        },
+        { $unwind: "$LIST_TOURS" },
         {
           $lookup: {
             from: "tours",
@@ -213,116 +394,8 @@ class TourService {
           },
         },
       ]);
-      return result[0]?.totalRevenue || 0;
-    } catch (error) {
-      console.error("Error calculating total revenue:", error);
-      throw new Error("Error calculating total revenue");
-    }
-  }
 
-  // Doanh thu theo từng tour
-  async calculateRevenuePerTour() {
-    try {
-      const result = await BookingModel.aggregate([
-        { $unwind: "$LIST_TOURS" },
-        {
-          $lookup: {
-            from: "tours",
-            localField: "LIST_TOURS.TOUR_ID",
-            foreignField: "_id",
-            as: "tourDetails",
-          },
-        },
-        { $unwind: "$tourDetails" },
-        {
-          $group: {
-            _id: "$tourDetails._id",
-            tourName: { $first: "$tourDetails.TOUR_NAME" },
-            revenue: {
-              $sum: {
-                $multiply: [
-                  { $toDouble: "$tourDetails.PRICE_PER_PERSON" },
-                  "$LIST_TOURS.SLOT",
-                ],
-              },
-            },
-          },
-        },
-        { $sort: { revenue: -1 } },
-      ]);
-      return result;
-    } catch (error) {
-      console.error("Error calculating revenue per tour:", error);
-      throw new Error("Error calculating revenue per tour");
-    }
-  }
-
-  // Doanh thu theo loại tour
-  async calculateRevenueByType() {
-    try {
-      const result = await BookingModel.aggregate([
-        { $unwind: "$LIST_TOURS" },
-        {
-          $lookup: {
-            from: "tours",
-            localField: "LIST_TOURS.TOUR_ID",
-            foreignField: "_id",
-            as: "tourDetails",
-          },
-        },
-        { $unwind: "$tourDetails" },
-        {
-          $group: {
-            _id: "$tourDetails.TYPE",
-            revenue: {
-              $sum: {
-                $multiply: [
-                  { $toDouble: "$tourDetails.PRICE_PER_PERSON" },
-                  "$LIST_TOURS.SLOT",
-                ],
-              },
-            },
-          },
-        },
-        { $sort: { revenue: -1 } },
-      ]);
-      return result;
-    } catch (error) {
-      console.error("Error calculating revenue by type:", error);
-      throw new Error("Error calculating revenue by type");
-    }
-  }
-
-  // Doanh thu theo tháng
-  async calculateMonthlyRevenue() {
-    try {
-      const result = await BookingModel.aggregate([
-        { $unwind: "$LIST_TOURS" },
-        {
-          $lookup: {
-            from: "tours",
-            localField: "LIST_TOURS.TOUR_ID",
-            foreignField: "_id",
-            as: "tourDetails",
-          },
-        },
-        { $unwind: "$tourDetails" },
-        {
-          $group: {
-            _id: { $month: "$CREATE_AT" },
-            monthlyRevenue: {
-              $sum: {
-                $multiply: [
-                  { $toDouble: "$tourDetails.PRICE_PER_PERSON" },
-                  "$LIST_TOURS.SLOT",
-                ],
-              },
-            },
-          },
-        },
-        { $sort: { _id: 1 } },
-      ]);
-      return result;
+      return result.length > 0 ? result[0].totalRevenue : 0;
     } catch (error) {
       console.error("Error calculating monthly revenue:", error);
       throw new Error("Error calculating monthly revenue");
